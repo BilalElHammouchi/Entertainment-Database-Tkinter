@@ -1,0 +1,39 @@
+CREATE TABLE movies (
+    movie_id INT PRIMARY KEY AUTO_INCREMENT,
+    movie_name VARCHAR(70) NOT NULL UNIQUE,
+    movie_year INT,
+    movie_genre1 INT,
+    movie_genre2 INT,
+    movie_genre3 INT,
+    movie_runtime INT ,
+    movie_rating FLOAT ,
+    movie_added_time VARCHAR(19) ,
+    movie_director INT,
+    movie_franchise INT,
+    FOREIGN KEY( movie_genre1 ) REFERENCES genres( genre_id ) ON DELETE SET NULL,
+    FOREIGN KEY( movie_genre2 ) REFERENCES genres( genre_id ) ON DELETE SET NULL,
+    FOREIGN KEY( movie_genre3 ) REFERENCES genres( genre_id ) ON DELETE SET NULL,
+    FOREIGN KEY( movie_year ) REFERENCES years( year_id ) ON DELETE SET NULL,
+    FOREIGN KEY( movie_director ) REFERENCES directors( director_id ) ON DELETE SET NULL,
+    FOREIGN KEY( movie_franchise ) REFERENCES movie_franchises( mf_id ) ON DELETE SET NULL
+);
+
+CREATE TABLE movie_franchises (
+    mf_id INT PRIMARY KEY AUTO_INCREMENT,
+    mf_name VARCHAR(70)
+);
+
+CREATE TABLE years (
+    year_id INT PRIMARY KEY AUTO_INCREMENT,
+    year_actual INT 
+);
+
+CREATE TABLE genres (
+    genre_id INT PRIMARY KEY AUTO_INCREMENT,
+    genre_name VARCHAR(20)
+);
+
+CREATE TABLE directors (
+    director_id INT PRIMARY KEY AUTO_INCREMENT,
+    director_name VARCHAR(70) 
+);
