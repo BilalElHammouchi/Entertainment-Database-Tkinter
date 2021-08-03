@@ -5,8 +5,10 @@ import re
 from PIL import ImageTk,Image
 from datetime import datetime
 import os.path
+import os
 import configparser
 from AddImages import Find_MovieImage
+from AddImages import send_image_name
 
 def Back_Movies( frame1, frame2, frame3 ):
     frame1.pack_forget()
@@ -91,9 +93,12 @@ else:
     with open('configuration.ini', 'w') as configfile:
         config.write(configfile)
 
+movie_image = []
 def Movie_Main( root, Frame_Entertainment, Frame_MovieView, Frame_EnterMovie, Images_List, mycursor, mydb ):
     global Frame_MovieMain, dark_modeMovies, CanvasMovies, MainMoviesPicture, MainMoviesPictureDark,EnterMovie_Button,ViewMovie_Button,BackMovie_Button
     Frame_MovieMain = Frame( root )
+    if movie_image == []:
+        movie_image.append(Frame_Entertainment)
     Frame_Entertainment.pack_forget()
     Frame_MovieView.pack_forget()
     Frame_EnterMovie.pack_forget()
@@ -120,41 +125,42 @@ def Movie_Main( root, Frame_Entertainment, Frame_MovieView, Frame_EnterMovie, Im
 
 switch_Id=switch_Name=switch_Year=switch_Genre=switch_Run=switch_Rating=switch_Date=switch_Director=switch_Franchise=Edit_Or_Click=0
 
+sql_For_Images = Frame_Tree_For_Images = Frame_MovieView_For_Images = None
+list_image_view = []
 def Movie_View( Frame_MovieMain, mycursor, root, Frame_Entertainment, Frame_EnterMovie, Images_List, mydb, Option_Selected ):
     global tree, option2, dark_modeMovies,Frame_MovieView,Button_BackMovieMain,Button_EditMovieMain,Button_DeleteMovieMain,Frame_tree,style,scrollbar_tree
     Frame_MovieMain.pack_forget()
     Frame_MovieView.pack()
-    global switch_Id,switch_Name,switch_Year,switch_Genre,switch_Run,switch_Rating,switch_Date,switch_Director,switch_Franchise,Edit_Or_Click
+    global switch_Id,switch_Name,switch_Year,switch_Genre,switch_Run,switch_Rating,switch_Date,switch_Director,switch_Franchise,Edit_Or_Click,sql_For_Images
+    global Frame_Tree_For_Images, Frame_MovieView_For_Images, list_image_view, Image_View
+    Frame_MovieView_For_Images = Frame_MovieView
     option2 = Option_Selected
     if Option_Selected == 'ID' or Option_Selected is None:
         if Option_Selected is None:
             switch_Id = 0
         if switch_Id % 2 == 0:
-            sql = "SELECT * FROM movies ORDER BY movie_id"
-            mycursor.execute(sql)
-        else:
             sql = "SELECT * FROM movies ORDER BY movie_id DESC"
-            mycursor.execute(sql)
+        else:
+            sql = "SELECT * FROM movies ORDER BY movie_id"
+        mycursor.execute(sql)
         if Edit_Or_Click == 0:
             switch_Id += 1
             switch_Name=switch_Year=switch_Genre=switch_Run=switch_Rating=switch_Date=switch_Director=switch_Franchise=0
     elif Option_Selected == 'Name':
         if switch_Name % 2 == 0:
-            sql = "SELECT * FROM movies ORDER BY movie_name DESC"
-            mycursor.execute(sql)
+            sql = "SELECT * FROM movies ORDER BY movie_name"
         else:
-            sql = "SELECT * FROM movies ORDER BY movie_name" 
-            mycursor.execute(sql)
+            sql = "SELECT * FROM movies ORDER BY movie_name DESC" 
+        mycursor.execute(sql)
         if Edit_Or_Click == 0:
             switch_Name += 1
             switch_Id=switch_Year=switch_Genre=switch_Run=switch_Rating=switch_Date=switch_Director=switch_Franchise=0
     elif Option_Selected == 'Year':
         if switch_Year % 2 == 0:
-            sql = "SELECT movies.movie_id, movies.movie_name , years.year_actual , movies.movie_genre1, movies.movie_genre2, movies.movie_genre3, movies.movie_runtime, movies.movie_rating, movies.movie_added_time, movies.movie_director, movies.movie_franchise, movies.movie_year FROM movies LEFT JOIN years ON movies.movie_year = years.year_id ORDER BY years.year_actual"
-            mycursor.execute(sql)
-        else:
             sql = "SELECT movies.movie_id, movies.movie_name , years.year_actual , movies.movie_genre1, movies.movie_genre2, movies.movie_genre3, movies.movie_runtime, movies.movie_rating, movies.movie_added_time, movies.movie_director, movies.movie_franchise, movies.movie_year FROM movies LEFT JOIN years ON movies.movie_year = years.year_id ORDER BY years.year_actual DESC"
-            mycursor.execute(sql)
+        else:
+            sql = "SELECT movies.movie_id, movies.movie_name , years.year_actual , movies.movie_genre1, movies.movie_genre2, movies.movie_genre3, movies.movie_runtime, movies.movie_rating, movies.movie_added_time, movies.movie_director, movies.movie_franchise, movies.movie_year FROM movies LEFT JOIN years ON movies.movie_year = years.year_id ORDER BY years.year_actual"
+        mycursor.execute(sql)
         if Edit_Or_Click == 0:
             switch_Year += 1
             switch_Id=switch_Name=switch_Genre=switch_Run=switch_Rating=switch_Date=switch_Director=switch_Franchise=0
@@ -163,58 +169,52 @@ def Movie_View( Frame_MovieMain, mycursor, root, Frame_Entertainment, Frame_Ente
             switch_Genre += 1
             switch_Id=switch_Name=switch_Year=switch_Run=switch_Rating=switch_Date=switch_Director=switch_Franchise=0
         if switch_Genre % 2 == 0:
-            sql = "SELECT * FROM movies ORDER BY movie_genre1, movie_genre2, movie_genre3"
-            mycursor.execute(sql)
-        else:
             sql = "SELECT * FROM movies ORDER BY movie_genre1 DESC, movie_genre2 DESC, movie_genre3 DESC"
-            mycursor.execute(sql)
+        else:
+            sql = "SELECT * FROM movies ORDER BY movie_genre1, movie_genre2, movie_genre3"
+        mycursor.execute(sql)
     elif Option_Selected == 'Runtime':
         if switch_Run % 2 == 0:
-            sql = "SELECT * FROM movies ORDER BY movie_runtime"
-            mycursor.execute(sql)
-        else:
             sql = "SELECT * FROM movies ORDER BY movie_runtime DESC"
-            mycursor.execute(sql)
+        else:
+            sql = "SELECT * FROM movies ORDER BY movie_runtime"
+        mycursor.execute(sql)
         if Edit_Or_Click == 0:
             switch_Run += 1
             switch_Id=switch_Name=switch_Year=switch_Genre=switch_Rating=switch_Date=switch_Director=switch_Franchise=0
     elif Option_Selected == 'Rating':
         if switch_Rating % 2 == 0:
-            sql = "SELECT * FROM movies ORDER BY movie_rating"
-            mycursor.execute(sql)
-        else:
             sql = "SELECT * FROM movies ORDER BY movie_rating DESC"
-            mycursor.execute(sql)
+        else:
+            sql = "SELECT * FROM movies ORDER BY movie_rating"
+        mycursor.execute(sql)
         if Edit_Or_Click == 0:
             switch_Rating += 1
             switch_Id=switch_Name=switch_Year=switch_Genre=switch_Run=switch_Date=switch_Director=switch_Franchise=0
     elif Option_Selected == 'Date added':
         if switch_Date % 2 == 0:
-            sql = "SELECT * FROM movies ORDER BY movie_added_time"
-            mycursor.execute(sql)
-        else:
             sql = "SELECT * FROM movies ORDER BY movie_added_time DESC"
-            mycursor.execute(sql)
+        else:
+            sql = "SELECT * FROM movies ORDER BY movie_added_time"
+        mycursor.execute(sql)
         if Edit_Or_Click == 0:
             switch_Date += 1
             switch_Id=switch_Name=switch_Year=switch_Genre=switch_Run=switch_Rating=switch_Director=switch_Franchise=0
     elif Option_Selected == 'Director':
         if switch_Director % 2 == 0:
-            sql = "SELECT movies.movie_id, movies.movie_name , movies.movie_year , movies.movie_genre1, movies.movie_genre2, movies.movie_genre3, movies.movie_runtime, movies.movie_rating, movies.movie_added_time, directors.director_name, movies.movie_franchise, movies.movie_director FROM movies LEFT JOIN directors ON movies.movie_director = directors.director_id ORDER BY directors.director_name DESC"
-            mycursor.execute(sql)
-        else:
             sql = "SELECT movies.movie_id, movies.movie_name , movies.movie_year , movies.movie_genre1, movies.movie_genre2, movies.movie_genre3, movies.movie_runtime, movies.movie_rating, movies.movie_added_time, directors.director_name, movies.movie_franchise, movies.movie_director FROM movies LEFT JOIN directors ON movies.movie_director = directors.director_id ORDER BY directors.director_name"
-            mycursor.execute(sql)
+        else:
+            sql = "SELECT movies.movie_id, movies.movie_name , movies.movie_year , movies.movie_genre1, movies.movie_genre2, movies.movie_genre3, movies.movie_runtime, movies.movie_rating, movies.movie_added_time, directors.director_name, movies.movie_franchise, movies.movie_director FROM movies LEFT JOIN directors ON movies.movie_director = directors.director_id ORDER BY directors.director_name DESC"
+        mycursor.execute(sql)
         if Edit_Or_Click == 0:
             switch_Director += 1
             switch_Id=switch_Name=switch_Year=switch_Genre=switch_Run=switch_Rating=switch_Date=switch_Franchise=0
     elif Option_Selected == 'Franchise':
         if switch_Franchise % 2 == 0:
-            sql = "SELECT movies.movie_id, movies.movie_name , movies.movie_year , movies.movie_genre1, movies.movie_genre2, movies.movie_genre3, movies.movie_runtime, movies.movie_rating, movies.movie_added_time, movies.movie_director, movie_franchises.mf_name, movies.movie_franchise FROM movies LEFT JOIN movie_franchises ON movies.movie_franchise = movie_franchises.mf_id ORDER BY movie_franchises.mf_name DESC"
-            mycursor.execute(sql)
-        else:
             sql = "SELECT movies.movie_id, movies.movie_name , movies.movie_year , movies.movie_genre1, movies.movie_genre2, movies.movie_genre3, movies.movie_runtime, movies.movie_rating, movies.movie_added_time, movies.movie_director, movie_franchises.mf_name, movies.movie_franchise FROM movies LEFT JOIN movie_franchises ON movies.movie_franchise = movie_franchises.mf_id ORDER BY movie_franchises.mf_name"
-            mycursor.execute(sql)
+        else:
+            sql = "SELECT movies.movie_id, movies.movie_name , movies.movie_year , movies.movie_genre1, movies.movie_genre2, movies.movie_genre3, movies.movie_runtime, movies.movie_rating, movies.movie_added_time, movies.movie_director, movie_franchises.mf_name, movies.movie_franchise FROM movies LEFT JOIN movie_franchises ON movies.movie_franchise = movie_franchises.mf_id ORDER BY movie_franchises.mf_name DESC"
+        mycursor.execute(sql)
         if Edit_Or_Click == 0:
             switch_Franchise += 1
             switch_Id=switch_Name=switch_Year=switch_Genre=switch_Run=switch_Rating=switch_Date=switch_Director=0
@@ -224,6 +224,7 @@ def Movie_View( Frame_MovieMain, mycursor, root, Frame_Entertainment, Frame_Ente
     Frame_tree.grid( row = 0 , columnspan =	5 )
     style = ttk.Style()
     style.theme_use("clam")
+    style.configure('Treeview', rowheight=20)
     tree = ttk.Treeview( Frame_tree , column=("c1", "c2", "c3" , "c4" , "c5" , "c6" , "c7" , "c8" , "c9"
              ) , show='headings' , yscrollcommand = TRUE , height = 20 , )
     scrollbar_tree = Scrollbar( Frame_tree )
@@ -239,9 +240,9 @@ def Movie_View( Frame_MovieMain, mycursor, root, Frame_Entertainment, Frame_Ente
             movie_actual.append(movie[2])
         else:
             movie_result_year = movie[2]
-            sql = "SELECT year_actual FROM years WHERE year_id = %s"
+            sql2 = "SELECT year_actual FROM years WHERE year_id = %s"
             adr = ( movie_result_year , )
-            mycursor.execute(sql, adr)
+            mycursor.execute(sql2, adr)
             movie_result_year = mycursor.fetchall()
             if movie_result_year == []:
                 movie_actual.append( None )
@@ -250,9 +251,9 @@ def Movie_View( Frame_MovieMain, mycursor, root, Frame_Entertainment, Frame_Ente
         movie_result_genre1 = movie[3]
         movie_result_genre2 = movie[4]
         movie_result_genre3 = movie[5]
-        sql = "SELECT genre_name FROM genres WHERE genre_id = %s OR genre_id = %s OR genre_id = %s"
+        sql2 = "SELECT genre_name FROM genres WHERE genre_id = %s OR genre_id = %s OR genre_id = %s"
         adr = ( movie_result_genre1 , movie_result_genre2 , movie_result_genre3 )
-        mycursor.execute(sql, adr)
+        mycursor.execute(sql2, adr)
         movie_result_genre = mycursor.fetchall()
         genre_actual = ''
         for i in range(len(movie_result_genre)):
@@ -275,25 +276,30 @@ def Movie_View( Frame_MovieMain, mycursor, root, Frame_Entertainment, Frame_Ente
             movie_actual.append( movie[9] )
         else:
             movie_result_director = movie[9]
-            sql = "SELECT director_name FROM directors WHERE director_id = %s"
+            sql2 = "SELECT director_name FROM directors WHERE director_id = %s"
             adr = ( movie_result_director , )
-            mycursor.execute(sql, adr)
+            mycursor.execute(sql2, adr)
             movie_result_director = mycursor.fetchall()
             movie_actual.append( movie_result_director[0][0] )
         if Option_Selected == 'Franchise':
             movie_actual.append( movie[10] )
         else:
             movie_result_franchise = movie[10]
-            sql = "SELECT mf_name FROM movie_franchises WHERE mf_id = %s"
+            sql2 = "SELECT mf_name FROM movie_franchises WHERE mf_id = %s"
             adr = ( movie_result_franchise , )
-            mycursor.execute(sql, adr)
+            mycursor.execute(sql2, adr)
             movie_result_franchise = mycursor.fetchall()
             movie_actual.append( movie_result_franchise[0][0] )
         all_movies.append( movie_actual )
-    all_movies.reverse()
     for i in range(len(all_movies)):
-        tree.insert("", END, values= all_movies[i] )
+        tree.insert("", END, values= all_movies[i], iid=str(i) )
+    if list_image_view == []:
+        list_image_view.append(Frame_tree)
+        list_image_view.append(Frame_MovieView)
+        list_image_view.append(sql)
+        list_image_view.append(tree)
     tree.pack(  side = LEFT, fill = BOTH )
+    Image_View = False
     Button_BackMovieMain = Button( Frame_MovieView , text = 'Back' , command =lambda:Movie_Main(root,Frame_Entertainment,Frame_MovieView,Frame_EnterMovie,Images_List,mycursor,mydb) , font=('Orelega One','16') )
     Button_BackMovieMain.grid( row = 2 , column = 2 , pady = 10 )
     Button_EditMovieMain = Button( Frame_MovieView , text = 'Edit' , command =lambda: Edit_Movie(Frame_MovieMain,Frame_MovieView, mycursor, root, Frame_Entertainment, Frame_EnterMovie, Images_List, mydb, Option_Selected) , font=('Orelega One','16') )
@@ -332,20 +338,22 @@ def Delete_Movie( Frame_MovieMain,Frame_MovieView, mycursor, root, Frame_Enterta
         mydb.commit()
     Movie_View( Frame_MovieMain, mycursor, root, Frame_Entertainment, Frame_EnterMovie, Images_List, mydb, None )
 
-def disable_event():
+def disable_event(root):
     global EditMovies_Window
     EditMovies_Window.withdraw()
+    root.deiconify()
 
-def MakeEditWindow( ):
+def MakeEditWindow(root):
     global Frame_EditMovie,EditMovies_Window
     EditMovies_Window = Toplevel( )
-    EditMovies_Window.protocol( "WM_DELETE_WINDOW" , disable_event )
+    EditMovies_Window.protocol( "WM_DELETE_WINDOW" , lambda:disable_event(root) )
     EditMovies_Window.title( "Edit Your Movie" )
     EditMovies_Window.withdraw()
     Frame_EditMovie = Frame( EditMovies_Window )
 
 def Edit_Movie( Frame_MovieMain,Frame_MovieView, mycursor, root, Frame_Entertainment, Frame_EnterMovie, Images_List, mydb, Option_Selected ):
-    MakeEditWindow( )
+    MakeEditWindow(root)
+    root.withdraw()
     global Frame_EditMovie, Entry_MovieNameEdit, Entry_MovieYearEdit, listboxEdit, Entry_MovieRunHEdit, Entry_MovieRunMEdit, Entry_MovieDirEdit
     global Entry_MovieFranEdit,Frame_MovieRunEdit, Label_EnterMovieNameEdit, Label_EnterMovieYearEdit, Label_EnterMovieGenreEdit, Label_EnterMovieRunEdit
     global LabelHoursEdit, LabelMinutesEdit, Label_EnterMovieDirEdit, Label_EnterMovieRatingEdit,Label_EnterMovieFranEdit,frame_MovieButtonsEdit
@@ -465,12 +473,13 @@ def Edit_Movie( Frame_MovieMain,Frame_MovieView, mycursor, root, Frame_Entertain
 
     frame_MovieButtonsEdit = Frame( Frame_EditMovie )
     frame_MovieButtonsEdit.grid( row = 7 , columnspan = 2)
-
+    Add_MoviePosterButtonEdit = Button(frame_MovieButtonsEdit, text='Add Poster', font=('Orelega One','16') , command=lambda:Find_MovieImage(Entry_MovieNameEdit) )
+    Add_MoviePosterButtonEdit.grid( row = 0 , columnspan = 2, pady = 30)
     Confirm_ButtonEdit = Button(frame_MovieButtonsEdit , text = 'Confirm' , font=('Orelega One','16')  )
     Confirm_ButtonEdit.configure( command=lambda:ConfirmMovies_Edit( Frame_MovieMain,Frame_MovieView, mycursor, root, Frame_Entertainment, Frame_EnterMovie, Images_List, mydb, Option_Selected ))
-    Confirm_ButtonEdit.grid( row = 0 , column = 0 , padx = 30 , pady = 30 )
+    Confirm_ButtonEdit.grid( row = 1 , column = 0 , padx = 30 , pady = 30 )
     Reset_ButtonEdit = Button(frame_MovieButtonsEdit , text = 'Reset' , font=('Orelega One','16'),command=Reset_AllEdit )
-    Reset_ButtonEdit.grid( row = 0 , column = 2 , padx = 30 , pady = 30 )
+    Reset_ButtonEdit.grid( row = 1 , column = 1 , padx = 30 , pady = 30 )
     global EditMovies_Window
     Frame_ListboxEdit = Frame( Frame_EditMovie )
     Frame_ListboxEdit.grid( row = 2 , column  = 1 )
@@ -528,12 +537,9 @@ def ConfirmMovies_Edit( Frame_MovieMain,Frame_MovieView, mycursor, root, Frame_E
         Movie_Genre2Edit = Choices2Edit[1]
         Movie_Genre3Edit = Choices2Edit[2]
     
-    global Movie_RunEdit
+    global Movie_RunEdit, Movie_StarsEdit, star_numberEdit, Image_View, Movie_DirEdit
     Movie_RunEdit = CountEdit()
-    global Movie_DirEdit
     Movie_DirEdit = Entry_MovieDirEdit.get()
-    global Movie_StarsEdit
-    global star_numberEdit
     if star_numberEdit == None:
         sql = "SELECT movie_rating FROM movies WHERE movie_id = %s"
         adr = ( Movie_IdEdit , )
@@ -595,17 +601,26 @@ def ConfirmMovies_Edit( Frame_MovieMain,Frame_MovieView, mycursor, root, Frame_E
         Movie_YearEdit = year_resultEdit[0][0]
     Movie_DirEdit = dir_resultEdit[0][0]
     Movie_FranEdit = fran_resultEdit[0][0]    
-
+    image_db_name = send_image_name()
+    
     sql = "UPDATE movies SET movie_name = %s, movie_year = %s, movie_genre1 = %s, movie_genre2 = %s, movie_genre3 = %s, movie_runtime = %s, movie_rating = %s, movie_director = %s, movie_franchise = %s WHERE movie_id = %s"
     val = ( Movie_NameEdit , Movie_YearEdit , Movie_Genre1Edit , Movie_Genre2Edit , Movie_Genre3Edit , Movie_RunEdit , Movie_StarsEdit , Movie_DirEdit , Movie_FranEdit  ,  Movie_IdEdit )
     mycursor.execute(sql, val)
-    
+    if image_db_name is not None:
+        try:
+            os.rename('Images/Movies/Native/' + image_db_name, 'Images/Movies/Native/' + str(Movie_IdEdit) + '.jpg' )
+        except:
+            os.remove( 'Images/Movies/Native/' + str(Movie_IdEdit) + '.jpg' )
+            os.rename('Images/Movies/Native/' + image_db_name, 'Images/Movies/Native/' + str(Movie_IdEdit) + '.jpg' )
     mydb.commit()
     EditMovies_Window.withdraw()
-    global option2
-    global Edit_Or_Click
+    global option2, Edit_Or_Click
     Edit_Or_Click = 1
-    Movie_View( Frame_MovieMain, mycursor, root, Frame_Entertainment, Frame_EnterMovie, Images_List, mydb, Option_Selected )
+    if Image_View == False:
+        Movie_View( Frame_MovieMain, mycursor, root, Frame_Entertainment, Frame_EnterMovie, Images_List, mydb, Option_Selected )
+    else:
+        changeto_images( mycursor, root, Images_List, mydb )
+    root.deiconify()
 
 def CountEdit():
     global hoursEdit
@@ -968,14 +983,68 @@ def Work_Movies( mydb,mycursor,frame_EnterMovie):
     Movie_Dir = dir_result[0][0]
     Movie_Fran = fran_result[0][0]    
 
+    image_db_name = send_image_name()
     sql = "INSERT INTO movies (movie_name, movie_year, movie_genre1 , movie_genre2, movie_genre3, movie_runtime, movie_rating, movie_director, movie_franchise, movie_added_time) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
     val = ( Movie_Name , Movie_Year , Movie_Genre1 , Movie_Genre2 , Movie_Genre3 , Movie_Run , Movie_Stars , Movie_Dir , Movie_Fran ,Movie_added )
     mycursor.execute(sql, val)
     
     mydb.commit()
+    if image_db_name is not None:
+        os.rename('Images/Movies/Native/' + image_db_name, 'Images/Movies/Native/' + str(mycursor.lastrowid) + '.jpg' )
     Reset_All(   Entry_MovieDir, Entry_MovieRunM, Entry_MovieRunH, listbox, frame_EnterMovie, Entry_MovieFran,
                         Frame_MovieRun, Entry_MovieYear, Entry_MovieName, scrollbar)
-    star_number = None
+
+images = []
+buttons = []
+Image_View = False
+def _on_mouse_wheel(event):
+    global Images_Canvas
+    Images_Canvas.yview_scroll(-1 * int((event.delta / 120)), "units")
+
+def select_image( row ):
+    list_image_view[3].selection_set(str(row))
+
+def changeto_images( mycursor, root, Images_List, mydb ):
+    global Frame_Tree_For_Images, list_image_view, Image_View, images, buttons, Images_Canvas, option2, Frame_Entertainment
+    list_image_view[0].grid_forget()
+    Frame_Changeview = Frame(list_image_view[1] )
+    Images_Canvas = Canvas( Frame_Changeview , width= 1625, height=902)
+    Frame_Canvas = Frame(Images_Canvas)
+    Frame_Changeview.grid( row = 0, columnspan= 5)
+    Images_Canvas.bind_all("<MouseWheel>", _on_mouse_wheel)
+    Images_Canvas.pack(side = LEFT, fill = BOTH, expand = 1 )
+    Images_Scrollbar = Scrollbar(Frame_Changeview, orient = VERTICAL, command=Images_Canvas.yview)
+    Images_Scrollbar.pack(side = LEFT, fill = Y)
+    Images_Canvas.configure( yscrollcommand= Images_Scrollbar.set )
+    Images_Canvas.bind('<Configure>' , lambda e: Images_Canvas.configure(scrollregion= Images_Canvas.bbox("all") ) )
+    Images_Canvas.create_window( (0,0), window = Frame_Canvas, anchor = "nw" )
+    mycursor.execute(list_image_view[2])
+    movie_result = mycursor.fetchall()
+    i = j = k = 0
+    images = []
+    buttons = []
+    Image_View = True
+    for movie in movie_result:
+        try:
+            filename = Image.open("Images/Movies/Optimized/" + str(movie[0]) + ".jpg" )
+        except:
+            try:
+                filename = Image.open("Images/Movies/Native/" + str(movie[0]) + ".jpg" )
+                filename.save("Images/Movies/Optimized/" + str(movie[0]) + ".jpg" , quality=95 )
+                filename = Image.open("Images/Movies/Optimized/" + str(movie[0]) + ".jpg" )
+            except:
+                filename = Image.open("Images/image-not-found.png" )
+            filename = filename.resize( (200,300) , Image.ANTIALIAS )  
+        filename = ImageTk.PhotoImage( filename )
+        images.append(filename)
+        image_button = Button(Frame_Canvas, image = images[i+j*8], bd = 0, command=lambda k = k:select_image(k) )
+        image_button.grid( row = j , column = i )
+        buttons.append(image_button)
+        i += 1
+        k += 1
+        if i == 8:
+            j += 1
+            i = 0
 
 def darkMovies_function( ):
     global dark_modeMovies, Label_EnterMovieName,Entry_MovieName,Label_EnterMovieYear,Frame_MovieMain,CanvasMovies

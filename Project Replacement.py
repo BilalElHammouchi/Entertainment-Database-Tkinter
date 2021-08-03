@@ -5,6 +5,7 @@ from tkinter import ttk
 from darkmode import *
 from Config import *
 from PIL import ImageTk,Image
+import shutil
 
 # MySQL set-up
 
@@ -17,11 +18,20 @@ mydb = mysql.connector.connect(
 
 mycursor = mydb.cursor()
 
+def delete_folder():
+  try:
+    shutil.rmtree("Images/Movies/current")
+    root.destroy()
+  except:
+    root.destroy()
+
 # root and icon
 
 root = Tk()
 root.title("App")
 root.iconbitmap("popcorn.ico")
+root.protocol( "WM_DELETE_WINDOW" , delete_folder )
+
 
 # Menu
 program_menu = Menu(root)
@@ -29,6 +39,7 @@ root.config(menu=program_menu)
 file_menu = Menu(program_menu)
 program_menu.add_cascade(label="File", menu=file_menu )
 file_menu.add_command(label="Dark Mode" , command =lambda:dark_function(root) )
+file_menu.add_command(label="Change View Mode" , command =lambda:changeto_images( mycursor, root, Images_List, mydb ) )
 file_menu.add_command(label="Settings" , command = Config_Func )
 file_menu.add_command(label="Exit", command=root.quit )
 
@@ -48,7 +59,5 @@ Images_List = [ movie_img,show_img,game_img,book_img,MovieMain_img,starleft_img,
 
 # Movie View Parameters
 
-
 Frame_MainMenu(root, Images_List, mycursor, mydb)
-
 root.mainloop()
