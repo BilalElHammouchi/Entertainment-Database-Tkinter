@@ -1,4 +1,5 @@
 # Entertainment-Database
+DESCRIPTION
 
 This app serves as a tracker to movies and tv shows watched, games played and books read. It uses a Database system to support thousands of entries and for easy queries of data.
 The Database system that the app uses is known as MYSQL which is free to use and relatively easy to install. So far only the movies section has been worked on but the other
