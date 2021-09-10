@@ -7,7 +7,7 @@ sections will be added later.
 
 
 
-INSTALLATION
+**INSTALLATION**
 
 Go to https://dev.mysql.com/downloads/mysql/ and click on Recommended Download.
 
