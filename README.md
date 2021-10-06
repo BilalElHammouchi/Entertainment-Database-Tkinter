@@ -5,7 +5,19 @@ This app serves as a tracker to movies and tv shows watched, games played and bo
 The Database system that the app uses is known as MYSQL which is free to use and relatively easy to install. So far only the movies section has been worked on but the other
 sections will be added later.
 
+![Screenshot 2021-10-06 210937](https://user-images.githubusercontent.com/19519174/136275853-36640c09-5826-4a47-b819-86ad32eb29e7.jpg)
 
+List view:
+
+![Screenshot 2021-10-06 211035](https://user-images.githubusercontent.com/19519174/136275989-fddbf4a1-bab5-48bb-bced-f9da6474ef83.jpg)
+
+Poster view:
+
+![Screenshot 2021-10-06 211107](https://user-images.githubusercontent.com/19519174/136276049-d2e24300-4d16-4f65-a917-a32b740fc6ff.jpg)
+
+Enter view:
+
+![Screenshot 2021-10-06 211128](https://user-images.githubusercontent.com/19519174/136276114-e7882b59-cc17-4a18-baa5-e77ddbb5c360.jpg)
 
 **INSTALLATION**
 
