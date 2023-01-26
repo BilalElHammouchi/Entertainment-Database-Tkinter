@@ -1,0 +1,2 @@
+kroc = rgb(256,180,76)
+winxpblue = rgb(240,236,220)
