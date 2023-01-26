@@ -159,7 +159,6 @@ class Shows(Abstract):
             messagebox.showerror("Error","Please provide a name before searching!")
             return
         response = requests.get( f"https://api.themoviedb.org/3/search/tv?api_key=8be65c3700e29a363aa7a71021169259&append_to_response=images&query={self.entry_enterSearch.get()}")
-        #print(response.text)
         response = json.loads( response.text )['results']
         self.root.img_tempImages.clear()
         self.tree_select.delete(*self.tree_select.get_children())

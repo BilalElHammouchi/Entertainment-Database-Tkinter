@@ -45,6 +45,7 @@ class Entertainment(tkinter.Tk):
         self.main_menu()
         self.center()
 
+
     def switch_theme(self,theme):
         self.theme.set_theme(theme)
         styleButton = ttk.Style()
@@ -58,12 +59,14 @@ class Entertainment(tkinter.Tk):
         except:
             pass
 
+
     def configuration(self):
         self.configparser = configparser.ConfigParser()
         self.configparser.read('lib/configuration.ini')
         if self.configparser['Options']['maximized'] == "True":
             self.state("zoomed")
         self.theme_found = self.configparser['Options']['theme']
+
 
     def main_menu(self):
         self.frame_mainMenu = ttk.Frame(self )
@@ -147,6 +150,7 @@ class Entertainment(tkinter.Tk):
                 self.preferences_frame.winfo_children()[i].state(['!disabled','selected'])
                 dict_[self.preferences_frame.winfo_children()[i]['text'] ].set(1)
 
+
     def write_preferences(self ):
         self.configparser['Movie Posters']['ID'] = str(self.var_moviePosterid.get())
         self.configparser['Movie Posters']['Title'] = str(self.var_moviePostertitle.get())
@@ -161,6 +165,7 @@ class Entertainment(tkinter.Tk):
         with open('lib/configuration.ini', 'w') as configfile:
             self.configparser.write(configfile)
     
+    
     def center(self):
         self.update_idletasks()
         screen_width = self.winfo_screenwidth()
@@ -169,6 +174,7 @@ class Entertainment(tkinter.Tk):
         x = screen_width/2 - size[0]/2
         y = screen_height/2 - size[1]/2
         self.geometry("+%d+%d" % (x, y))
+
 
     def destroy_app(self):
         self.configparser.read('lib/configuration.ini')
@@ -179,6 +185,7 @@ class Entertainment(tkinter.Tk):
         with open('lib/configuration.ini', 'w') as configfile:
                 self.configparser.write(configfile)
         self.destroy()
+
 
 if __name__ == "__main__":
     mainApp = Entertainment()

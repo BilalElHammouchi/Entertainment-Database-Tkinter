@@ -19,7 +19,9 @@ from tkinter import filedialog
 class Movies(Abstract):
     def __init__(self,root):
         super().__init__(root)
-        self.sorted_dictionary = { "id": 1, "name": 0, "year": 0, "genre": 0, "runtime": 0, "rating": 0, "added_time": 0, "actors": 0, "directors": 0, "franchise": 0 }
+        self.movie_records = None
+        self.sorted_dictionary = { "movie_id": 1, "movie_name": 0, "year": 0, "genre": 0, "runtime": 0, "rating": 0, "added_time": 0, 
+                "actors": 0, "directors": 0, "franchise": 0 }
         if self.root.configparser['Options']['movie_view'] == "List":
             self.button_menuView.configure( command = self.view )
         else:
@@ -503,157 +505,65 @@ class Movies(Abstract):
         elif start and self.sorted_dictionary[option] == 1:
             self.sorted_dictionary[option] = 0
         self.view_tree.delete(  *self.view_tree.get_children()  )
-        sql_query = """SELECT movies.id, movies.name, year, g1.name, g2.name, g3.name, runtime, rating, added_time, movie_franchises.name, movies.tmd_id
-                                    FROM movies LEFT JOIN genres g1 ON movies.genre1 = g1.id 
-                                                LEFT JOIN genres g2 ON movies.genre2 = g2.id 
-                                                LEFT JOIN genres g3 ON movies.genre3 = g3.id
-                                                LEFT JOIN movie_franchises on movies.franchise = movie_franchises.id """
-        options = [ "id", "name", "year", "runtime", "rating", "added_time" ]
-        for o in options:
-            if option == o and self.sorted_dictionary[o] == 0:
-                self.root.cur.execute( f"{sql_query} ORDER BY movies.{o}")
-                self.sorted_dictionary[o] = 1
-                self.sorted_option = o
-                break
-            elif option == o and self.sorted_dictionary[o] == 1:
-                self.root.cur.execute( f"{sql_query} ORDER BY movies.{o} DESC")
-                self.sorted_dictionary[o] = 0
-                self.sorted_option = o
-                break
-        if option == "genre" and self.sorted_dictionary["genre"] == 0:
-            self.root.cur.execute( f"{sql_query} ORDER BY movies.genre1, movies.genre2, movies.genre3")
-            self.sorted_dictionary["genre"] = 1
-            self.sorted_option = "genre"
-        elif option == "genre" and self.sorted_dictionary["genre"] == 1:
-            self.root.cur.execute( f"{sql_query} ORDER BY movies.genre1 DESC, movies.genre2 DESC, movies.genre3 DESC")
-            self.sorted_dictionary["genre"] = 0
-            self.sorted_option = "genre"
-        elif option == "franchise" and self.sorted_dictionary["franchise"] == 0:
-            self.root.cur.execute( f"{sql_query} ORDER BY movie_franchises.name")
-            self.sorted_dictionary["franchise"] = 1
-            self.sorted_option = "franchise"
-        elif option == "franchise" and self.sorted_dictionary["franchise"] == 1:
-            self.root.cur.execute( f"{sql_query} ORDER BY movie_franchises.name DESC")
-            self.sorted_dictionary["franchise"] = 0
-            self.sorted_option = "franchise"
+        sql_query = """SELECT movies.id, movies.name AS movie_name, movies.year, group_concat(DISTINCT genres.name) AS genre, movies.runtime, 
+            movies.rating, movies.added_time, group_concat(DISTINCT actors.name) AS actors, group_concat(DISTINCT directors.name) AS directors, 
+            movie_franchises.name, movies.times_viewed, movies.tmd_id FROM movies 
+            LEFT JOIN movie_genres ON movies.id=movie_genres.movie_id
+            LEFT JOIN genres ON movie_genres.genre_id=genres.id
+            LEFT JOIN movie_castings ON movies.id=movie_castings.movieid
+            LEFT JOIN actors ON movie_castings.actorid=actors.id
+            LEFT JOIN movie_directing ON movies.id=movie_directing.movieid
+            LEFT JOIN directors ON movie_directing.directorid=directors.id
+            LEFT JOIN movie_franchises ON movies.franchise=movie_franchises.id
+            GROUP BY movies.name"""
+        if self.sorted_dictionary[option] == 0:
+            self.root.cur.execute( f"{sql_query} ORDER BY {option}")
+            self.sorted_dictionary[option] = 1
+        else:
+            self.root.cur.execute( f"{sql_query} ORDER BY {option} DESC")
+            self.sorted_dictionary[option] = 0
         self.movie_records = self.root.cur.fetchall()
         for i in range( 0, len(self.movie_records) ):
-            self.select_rest(i)
-            self.view_tree.insert("", END, values = (self.movie_records[i][0], self.movie_records[i][1], self.movie_records[i][2], 
-                                                    self.genres, self.runtime, self.movie_records[i][7], self.movie_records[i][8], self.actors,
-                                                    self.directors, self.franchise, self.movie_records[i][10] ), iid=str(i) )
+            self.view_tree.insert("", END, values = self.movie_records[i], iid=str(i) )
 
-    def select_rest(self,i):
-        self.genres = ""
-        if self.movie_records[i][3]:
-            self.genres = self.movie_records[i][3]
-        if self.movie_records[i][4]:
-            self.genres += ", " + self.movie_records[i][4]
-        if self.movie_records[i][5]:
-            self.genres += ", " + self.movie_records[i][5]
-        self.runtime = ""
-        if self.movie_records[i][6]//60:
-            self.runtime = f"{str(self.movie_records[i][6]//60)}h"
-        if self.movie_records[i][6] % 60:
-            self.runtime += f" {self.movie_records[i][6] % 60}m"
-        self.directors = ""
-        self.root.cur.execute("""SELECT directors.name FROM movie_directing INNER JOIN directors ON movie_directing.directorid = directors.id WHERE movieid = ?""", 
-                        (self.movie_records[i][0],) )
-        director_result = self.root.cur.fetchall()
-        for j in range( 0, len(director_result) ):
-            if j == 0:
-                self.directors += director_result[j][0]
-            else:
-                self.directors += ", " + director_result[j][0]
-        self.actors = ""
-        self.root.cur.execute("""SELECT actors.name FROM movie_castings INNER JOIN actors ON movie_castings.actorid = actors.id WHERE movieid = ?""", 
-                        (self.movie_records[i][0],) )
-        actor_result = self.root.cur.fetchall()
-        for j in range( 0, len(actor_result)  ):
-            if j == 0:
-                self.actors += actor_result[j][0]
-            else:
-                self.actors += ", " + actor_result[j][0]
-        self.franchise = ""
-        if self.movie_records[i][9]:
-            self.franchise = self.movie_records[i][9]
 
     def view_search(self, var, index, mode):
-        #print(f"{self.var_search.get() = }\t{self.var_search2.get() = }")
         if self.var_search.get():
-            self.view_tree.delete(  *self.view_tree.get_children()  )
-            dictio = {"ID": 0, "Title": 1, "Year": 2, "Genre": 3, "Runtime": 4, "Rating": 7, "Date added": 8, "Actor": 9, "Director": 11, "Franchise": 10}
+            self.view_tree.delete(*self.view_tree.get_children())
+            dictio = {"ID": 0, "Title": 1, "Year": 2, "Genre": 3, "Runtime": 4, "Rating": 5, "Date added": 6, "Actor": 7, 
+                    "Director": 8, "Franchise": 9, "Times Viewed": 10}
             self.search_filter( dictio[self.var_search2.get()] )
-        else:
-            try:
-                self.view_tree.delete(  *self.view_tree.get_children()  )
-                for i in range( 0, len(self.movie_records) ):
-                    self.select_rest(i)
-                    self.view_tree.insert("", END, values = (self.movie_records[i][0], self.movie_records[i][1], self.movie_records[i][2], 
-                                                            self.genres, self.runtime, self.movie_records[i][7], self.movie_records[i][8], self.actors,
-                                                            self.directors, self.franchise, self.movie_records[i][10] ), iid=str(i) )
-            except Exception as e:
-                print(e)
+        elif self.movie_records:
+            self.view_tree.delete(*self.view_tree.get_children())
+            for i in range( 0, len(self.movie_records) ):
+                self.view_tree.insert("", END, values = self.movie_records[i], iid=str(i) )
 
-    def search_filter(self, column ):
-        #print(f"{self.movie_records}")
+
+    def search_filter(self, column):
         for i in range( 0, len(self.movie_records) ):
-            self.select_rest(i)
-            if column == 0 or column == 2 or column == 7:
-                try:
-                    if self.var_search.get() == self.movie_records[i][column] or float(self.var_search.get()) == self.movie_records[i][column]:
-                        self.view_tree.insert("", END, values = (self.movie_records[i][0], self.movie_records[i][1], self.movie_records[i][2], 
-                                                            self.genres, self.runtime, self.movie_records[i][7], self.movie_records[i][8], self.actors,
-                                                            self.directors, self.franchise, self.movie_records[i][10] ), iid=str(i) )
-                except:
-                    pass
-            elif column == 3:
-                if self.var_search.get().lower() in self.genres.lower():
-                    self.view_tree.insert("", END, values = (self.movie_records[i][0], self.movie_records[i][1], self.movie_records[i][2], 
-                                                        self.genres, self.runtime, self.movie_records[i][7], self.movie_records[i][8], self.actors,
-                                                        self.directors, self.franchise, self.movie_records[i][10] ), iid=str(i) )
-            elif column == 4:
-                if self.var_search.get().lower() in self.runtime.lower():
-                    self.view_tree.insert("", END, values = (self.movie_records[i][0], self.movie_records[i][1], self.movie_records[i][2], 
-                                                        self.genres, self.runtime, self.movie_records[i][7], self.movie_records[i][8], self.actors,
-                                                        self.directors, self.franchise, self.movie_records[i][10] ), iid=str(i) )
-            elif column == 9:
-                if self.var_search.get().lower() in self.actors.lower():
-                    self.view_tree.insert("", END, values = (self.movie_records[i][0], self.movie_records[i][1], self.movie_records[i][2], 
-                                                        self.genres, self.runtime, self.movie_records[i][7], self.movie_records[i][8], self.actors,
-                                                        self.directors, self.franchise, self.movie_records[i][10] ), iid=str(i) )
-            elif column == 11:
-                if self.var_search.get().lower() in self.directors.lower():
-                    self.view_tree.insert("", END, values = (self.movie_records[i][0], self.movie_records[i][1], self.movie_records[i][2], 
-                                                        self.genres, self.runtime, self.movie_records[i][7], self.movie_records[i][8], self.actors,
-                                                        self.directors, self.franchise, self.movie_records[i][10] ), iid=str(i) )
-            elif column == 10:
-                if self.var_search.get().lower() in self.franchise.lower():
-                    self.view_tree.insert("", END, values = (self.movie_records[i][0], self.movie_records[i][1], self.movie_records[i][2], 
-                                                        self.genres, self.runtime, self.movie_records[i][7], self.movie_records[i][8], self.actors,
-                                                        self.directors, self.franchise, self.movie_records[i][10] ), iid=str(i) )
-            else:
-                if self.var_search.get().lower() in self.movie_records[i][column].lower():
-                    self.view_tree.insert("", END, values = (self.movie_records[i][0], self.movie_records[i][1], self.movie_records[i][2], 
-                                                        self.genres, self.runtime, self.movie_records[i][7], self.movie_records[i][8], self.actors,
-                                                        self.directors, self.franchise, self.movie_records[i][10] ), iid=str(i) )
+            if type(self.movie_records[i][column]) == str and self.var_search.get().lower() in self.movie_records[i][column].lower():
+                self.view_tree.insert("", END, values = self.movie_records[i], iid=str(i))
+            elif type(self.movie_records[i][column]) == int and self.var_search.get().isdigit() and int(self.var_search.get()) == self.movie_records[i][column]:
+                self.view_tree.insert("", END, values = self.movie_records[i], iid=str(i))
+            elif type(self.movie_records[i][column]) == float and self.var_search.get().replace('.','',1).isdigit() and float(self.var_search.get()) == self.movie_records[i][column]:
+                self.view_tree.insert("", END, values = self.movie_records[i], iid=str(i))
     
     def view(self):
         super().view()
         self.root.configparser['Options'][ 'movie_view' ] = 'List'
         with open('lib/configuration.ini', 'w') as configfile:
             self.root.configparser.write(configfile)
-        self.combobox_search['values'] = ('ID','Title','Year','Genre','Runtime', 'Times Viewed', 'Rating','Date added','Actor','Director','Franchise')
+        self.combobox_search['values'] = ('ID','Title','Year','Genre','Runtime', 'Rating','Date added', 'Actor', 'Director', 'Franchise', 'Times Viewed')
         self.combobox_search['state'] = "readonly"
         self.combobox_search.set("Title")
-        self.view_tree.configure( column=("c1", "c2", "c3" , "c4" , "c5" , "c6" , "c7" , "c8" , "c9", "c10", ) )
+        self.view_tree.configure( column=("c1", "c2", "c3" , "c4" , "c5" , "c6" , "c7" , "c8" , "c9", "c10", "c11") )
         self.view_tree.column("#1", anchor= CENTER, width = 50 )
-        self.view_tree.heading("#1", text="ID", command = lambda: self.sort_tree('id',False) )
-        self.view_tree.column("#2", anchor= CENTER, width = 350 )
-        self.view_tree.heading("#2", text="Title", command = lambda: self.sort_tree('name',False) )
-        self.view_tree.column("#3", anchor= CENTER, width = 50 )
+        self.view_tree.heading("#1", text="ID", command = lambda: self.sort_tree('movie_id',False) )
+        self.view_tree.column("#2", anchor= CENTER, width = 330 )
+        self.view_tree.heading("#2", text="Title", command = lambda: self.sort_tree('movie_name',False) )
+        self.view_tree.column("#3", anchor= CENTER, width = 40 )
         self.view_tree.heading("#3", text="Year", command = lambda: self.sort_tree('year',False) )
-        self.view_tree.column("#4", anchor= CENTER, width = 200 )
+        self.view_tree.column("#4", anchor= CENTER, width = 160 )
         self.view_tree.heading("#4", text="Genre", command = lambda: self.sort_tree('genre',False) )
         self.view_tree.column("#5", anchor= CENTER, width = 60 )
         self.view_tree.heading("#5", text="Runtime", command = lambda: self.sort_tree('runtime',False) )
@@ -662,11 +572,13 @@ class Movies(Abstract):
         self.view_tree.column("#7", anchor= CENTER, width = 100 )
         self.view_tree.heading("#7", text="Date added", command = lambda: self.sort_tree('added_time',False) )
         self.view_tree.column("#8", anchor= CENTER, width = 50 ) 
-        self.view_tree.heading("#8", text= "Actors" )
+        self.view_tree.heading("#8", text= "Actors", command = lambda: self.sort_tree('actors',False) )
         self.view_tree.column("#9", anchor= CENTER, width = 200 )
-        self.view_tree.heading("#9", text= "Director" )
+        self.view_tree.heading("#9", text= "Director", command = lambda: self.sort_tree('directors',False) )
         self.view_tree.column("#10", anchor= CENTER, width = 150 )
         self.view_tree.heading("#10", text="Franchise", command = lambda: self.sort_tree('franchise',False) )
+        self.view_tree.column("#11", anchor= CENTER, width = 80 )
+        self.view_tree.heading("#11", text="Times Viewed", command = lambda: self.sort_tree('times_viewed',False) )
         self.sort_tree( self.sorted_option, True )
         self.button_movieEdit = ttk.Button(self.frame_view, text = "Edit", command = lambda: Thread( target = self.movie_edit ).start() )
         self.button_movieEdit.grid( row = 2, column = 1, pady = 10 )
